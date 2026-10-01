@@ -896,6 +896,8 @@ main{max-width:1160px}.panel-head h2{font-size:clamp(40px,4.8vw,58px)}
 @media(max-width:640px){
   .footer-meta{justify-content:flex-end;padding:18px 18px 22px}
 }
+/* TEST MODE banner */
+.test-mode-banner{position:fixed;right:0;bottom:0;z-index:99999;background:#b3261e;color:#fff;font:600 11px/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;pointer-events:none;opacity:.92}
 </style>
 </head>
 <body>
@@ -1297,6 +1299,21 @@ main{max-width:1160px}.panel-head h2{font-size:clamp(40px,4.8vw,58px)}
    API CONFIG
    ════════════════════════════════════════════════════════════ */
 const API_BASE = '';  /* empty = same origin; set to full URL if needed */
+/* ── TEST MODE ───────────────────────────────────────────────────
+   true  = todos los buses y fechas abiertos para pruebas
+   false = reglas de producción (periodos + ventana 1 mes / 4 días)
+   ────────────────────────────────────────────────────────────── */
+const TEST_MODE = true;
+if (TEST_MODE) {
+  (function(){
+    const b = document.createElement('div');
+    b.className = 'test-mode-banner';
+    b.textContent = 'TEST MODE';
+    document.body.appendChild(b);
+    const cf = document.getElementById('cf_date');
+    if (cf) { cf.removeAttribute('min'); cf.removeAttribute('max'); }
+  })();
+}
 const _originalFooterSrc = document.getElementById('footerHeroImg')?.src || '';
 
 const PERIODS = [
@@ -1418,8 +1435,8 @@ function renderBuses() {
           const today=todayJST();
           const start=new Date(bus.start+'T00:00:00Z');
           const end=new Date(bus.end+'T00:00:00Z');
-          if(today < start) return `<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;letter-spacing:.28em;" title="Reservations not yet open for this period">Coming soon</button>`;
-          if(today > end)   return `<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;letter-spacing:.28em;" title="This service period has ended">Period ended</button>`;
+          if(!TEST_MODE && today < start) return `<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;letter-spacing:.28em;" title="Reservations not yet open for this period">Coming soon</button>`;
+          if(!TEST_MODE && today > end)   return `<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;letter-spacing:.28em;" title="This service period has ended">Period ended</button>`;
           return `<button class="book-btn" data-busid="${bus.id}" data-dir="${schedState.dir}">Book this bus →</button>`;
         })()}
       </div>
@@ -1463,6 +1480,7 @@ function updateBusOptions() {
   const allBuses = dir==='arrival' ? BUSES_ARRIVAL : BUSES_DEPARTURE;
   const todayStr = todayStrJST();
   const buses = allBuses.filter(b => {
+    if (TEST_MODE) return true;
     /* Period must not have ended */
     if (b.end < todayStr) return false;
     /* Booking window opens 1 month before the period start */
@@ -1486,6 +1504,7 @@ function updateBusOptions() {
    ────────────────────────────────────────────────────────────── */
 function bookingWindowOpen(travelDateStr) {
   /* Returns true if TODAY falls within the booking window for travelDateStr */
+  if (TEST_MODE) return true;
   const today = todayJST();
   const travel = new Date(travelDateStr + 'T00:00:00Z');
   // Open: 1 month before travel date (same day, 1 month earlier)
@@ -1505,7 +1524,7 @@ function bookingWindowStatus(travelDateStr) {
   const closes = new Date(travel);
   closes.setDate(closes.getDate() - 4);
   const fmt = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-  return { open: today >= opens && today <= closes, opensOn: fmt(opens), closesOn: fmt(closes) };
+  return { open: TEST_MODE || (today >= opens && today <= closes), opensOn: fmt(opens), closesOn: fmt(closes) };
 }
 /* Always derive "today" in JST (UTC+9) so the date is correct
    regardless of the visitor's local timezone. */
@@ -1573,6 +1592,7 @@ function updateDateHint() {
     dateInput.max = '2026-09-30';
     dateInput.value = '';
   }
+  if (TEST_MODE) { dateInput.removeAttribute('min'); dateInput.removeAttribute('max'); if (bus) hint.innerHTML = '<span style="color:#b3261e">⚑ Test mode — any date allowed</span>'; }
   updateBusSummary();
 }
 function updateBusSummary() {
@@ -1610,7 +1630,7 @@ function validateForm() {
   const date = val('f_date');
   const bus = busById(val('f_bus'));
   if (!date) { fail('f_date'); }
-  else if (bus && (date < bus.start || date > bus.end)) {
+  else if (!TEST_MODE && bus && (date < bus.start || date > bus.end)) {
     setFieldError('f_date', true);
     document.querySelector('.field[data-field="f_date"] .field-error').textContent = `${bus.label} only runs ${bus.periodLabel}. Pick a date in range.`;
     if (!firstBad) firstBad = 'f_date';
@@ -2479,8 +2499,8 @@ renderBuses = function() {
         </div>
         <div class="travel-time"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>${L.travelTime(bus.duration)}</span></div>
         ${(()=>{const today=todayJST(),start=new Date(bus.start+'T00:00:00Z'),end=new Date(bus.end+'T00:00:00Z');
-          if(today<start)return`<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;">${L.comingSoon}</button>`;
-          if(today>end)return`<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;">${L.periodEnded}</button>`;
+          if(!TEST_MODE&&today<start)return`<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;">${L.comingSoon}</button>`;
+          if(!TEST_MODE&&today>end)return`<button class="book-btn" disabled style="opacity:.45;cursor:not-allowed;">${L.periodEnded}</button>`;
           return`<button class="book-btn" data-busid="${bus.id}" data-dir="${schedState.dir}">${L.bookBtn}</button>`;
         })()}
       </div>
@@ -2498,6 +2518,7 @@ updateBusOptions = function() {
   const allBuses = dir==='arrival' ? BUSES_ARRIVAL : BUSES_DEPARTURE;
   const todayS = todayStrJST();
   const buses = allBuses.filter(b => {
+    if (TEST_MODE) return true;
     if (b.end < todayS) return false;
     const st = new Date(b.start+'T00:00:00Z');
     const wo = new Date(Date.UTC(st.getUTCFullYear(), st.getUTCMonth()-1, st.getUTCDate()));
@@ -2533,6 +2554,7 @@ updateDateHint = function() {
   } else {
     hint.textContent = ''; dateInput.min = todayStr(); dateInput.max = '2026-09-30'; dateInput.value = '';
   }
+  if (TEST_MODE) { dateInput.removeAttribute('min'); dateInput.removeAttribute('max'); if (bus) hint.innerHTML = '<span style="color:#b3261e">⚑ Test mode — any date allowed</span>'; }
   updateBusSummary();
 };
 
@@ -2568,7 +2590,7 @@ validateForm = function() {
   if(!val('f_hotel')) fail('f_hotel');
   const date=val('f_date'), bus=busById(val('f_bus'));
   if(!date){fail('f_date');}
-  else if(bus&&(date<bus.start||date>bus.end)){
+  else if(!TEST_MODE&&bus&&(date<bus.start||date>bus.end)){
     setFieldError('f_date',true);
     document.querySelector('.field[data-field="f_date"] .field-error').textContent=L.errBusRange(bus);
     if(!firstBad)firstBad='f_date';
