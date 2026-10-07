@@ -25,7 +25,7 @@ for (const v of ['PASS_SUPERADMIN', 'PASS_STAFF', 'PASS_MOXY', 'PASS_RITZ']) {
 //   hotel      → only its own hotel (reservations, cancellations, history, trash)
 const USERS = {
   superadmin: { pass: process.env.PASS_SUPERADMIN, role: 'superadmin', label: 'Super Admin',      hotelFilter: null },
-  hnvstaff:    { pass: process.env.PASS_STAFF,      role: 'staff',      label: 'HNV Staff',         hotelFilter: null },
+  nvstaff:    { pass: process.env.PASS_STAFF,      role: 'staff',      label: 'NV Staff',         hotelFilter: null },
   nvmoxy:     { pass: process.env.PASS_MOXY,       role: 'hotel',      label: 'Moxy',             hotelFilter: 'Moxy' },
   nvritz:     { pass: process.env.PASS_RITZ,       role: 'hotel',      label: 'The Ritz-Carlton', hotelFilter: 'Ritz-Carlton Reserve' },
 };
@@ -67,16 +67,29 @@ function hotelScope(req, params) {
 }
 
 // ── POST /api/auth ─────────────────────────────────────────────────────────
+// Token lifetime is slightly longer than the 30-min inactivity limit enforced in the admin;
+// while the user is active the admin renews it through /api/auth/refresh.
+const TOKEN_TTL = '35m';
+function signUser(username, u) {
+  return jwt.sign(
+    { username, role: u.role, label: u.label, hotelFilter: u.hotelFilter },
+    JWT_SECRET,
+    { expiresIn: TOKEN_TTL }
+  );
+}
+
 app.post('/api/auth', (req, res) => {
   const { username, password } = req.body;
   const u = USERS[username];
   if (!u || u.pass !== password) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = jwt.sign(
-    { username, role: u.role, label: u.label, hotelFilter: u.hotelFilter },
-    JWT_SECRET,
-    { expiresIn: '12h' }
-  );
-  res.json({ token, role: u.role, label: u.label, hotelFilter: u.hotelFilter });
+  res.json({ token: signUser(username, u), role: u.role, label: u.label, hotelFilter: u.hotelFilter });
+});
+
+// POST /api/auth/refresh — new token for a still-valid one (user must still exist)
+app.post('/api/auth/refresh', requireAuth, (req, res) => {
+  const u = USERS[req.user.username];
+  if (!u) return res.status(401).json({ error: 'Invalid token' });
+  res.json({ token: signUser(req.user.username, u), role: u.role, label: u.label, hotelFilter: u.hotelFilter });
 });
 
 // ══════════════════════════════════════════════════════════════════════════
