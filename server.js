@@ -377,7 +377,9 @@ app.get('/api/health', async (_req, res) => {
 
 // ── Clean URLs ────────────────────────────────────────────────────────────
 app.get('/',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'nisekovillagebus.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'nvbusadmin.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'nvbusadmin.html'), err => {
+  if (err) { console.error('admin sendFile:', err.message); res.status(err.status || 500).end(); }
+}));
 
 // ── Fallback ──────────────────────────────────────────────────────────────
 app.get('*', (req, res) => {
