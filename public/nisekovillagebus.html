@@ -2917,6 +2917,35 @@ document.getElementById('busSummaryClear').addEventListener('click', () => {
 const _origSwitchLangClear = switchLang;
 switchLang = function(lang){ _origSwitchLangClear(lang); syncClearSelBtn(); };
 syncClearSelBtn();
+
+/* ════ ANALYTICS (simple — sin cookies, sin datos personales) ════
+   visit      → una vez por sesión del navegador
+   book_click → "Book this bus" (una vez por sesión)
+   form_start → primer campo tocado del formulario (una vez por sesión)
+   Las reservas se cuentan directamente desde la base de datos. */
+function nvDevice(){ const w = window.innerWidth; return w <= 640 ? 'mobile' : w <= 1024 ? 'tablet' : 'desktop'; }
+function nvTrack(event){
+  try {
+    fetch(`${API_BASE}/api/track`, {
+      method:'POST', keepalive:true,
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ event, lang:_lang, device:nvDevice() }),
+    }).catch(()=>{});
+  } catch(e){}
+}
+function nvTrackOnce(event){
+  try {
+    const k = 'nvbus_t_' + event;
+    if (sessionStorage.getItem(k)) return;
+    sessionStorage.setItem(k, '1');
+  } catch(e){}
+  nvTrack(event);
+}
+nvTrackOnce('visit');
+document.getElementById('busCards').addEventListener('click', e => {
+  if (e.target.closest('.book-btn:not([disabled])')) nvTrackOnce('book_click');
+});
+document.getElementById('reserveFormWrap').addEventListener('focusin', () => nvTrackOnce('form_start'));
 </script>
 </body>
 </html>

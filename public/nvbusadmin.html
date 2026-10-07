@@ -647,6 +647,37 @@ button,input,select,textarea{font:inherit}
 @media(max-width:1024px){.sidebar{width:200px}.admin-main{margin-left:200px}#adminShell.sidebar-collapsed .sidebar{transform:translateX(-200px)}.sidebar-toggle-btn{left:200px}.content{padding:32px 26px}.topbar{padding:18px 26px}.topbar::after{left:26px}}
 @media(max-width:760px){.sidebar{width:100%}.sidebar-logo{padding:12px 14px}.sidebar-nav{padding:0}.nav-item{margin:0}.content{padding:20px 18px 36px}.topbar{padding:18px 20px}.topbar::after{left:20px}.sidebar-toggle-btn{display:none}.login-box{border-radius:14px}}
 
+
+/* ════ ANALYTICS ════ */
+.an-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.an-range{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--card)}
+.an-range-btn{background:none;border:none;border-right:1px solid var(--border);padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.an-range-btn:last-child{border-right:none}
+.an-range-btn:hover{background:var(--paper-2);color:var(--moss)}
+.an-range-btn.active{background:var(--moss);color:#fff;font-weight:500}
+#analyticsRangeLabel{margin-left:auto}
+.an-bar-row{margin-bottom:14px}
+.an-bar-row:last-child{margin-bottom:0}
+.an-bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;font-size:14px;color:var(--ink)}
+.an-bar-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.an-bar-val{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.an-bar-pct{color:var(--sage);font-weight:300;margin-left:9px;font-size:12.5px}
+.an-cols{display:flex;align-items:flex-end;gap:2px;height:150px;padding-bottom:20px;position:relative;border-bottom:1px solid var(--border2)}
+.an-col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative;cursor:default}
+.an-col-bar{width:100%;border-radius:3px 3px 0 0;transition:height .6s cubic-bezier(.22,1,.36,1)}
+.an-col-bar.visits{background:linear-gradient(180deg,#3980ca,var(--moss))}
+.an-col-bar.bookings{background:linear-gradient(180deg,var(--gold-soft),var(--gold))}
+.an-col:hover .an-col-bar{filter:brightness(1.15)}
+.an-col-lbl{position:absolute;bottom:-20px;left:0;font-size:10px;color:var(--sage);white-space:nowrap;letter-spacing:.04em}
+.an-cols-max{font-size:11px;color:var(--sage);letter-spacing:.14em;text-transform:uppercase;text-align:right;margin-top:24px}
+.an-empty{font-size:13px;color:var(--sage);letter-spacing:.12em}
+.an-note{font-size:12.5px;color:var(--sage);line-height:1.7;letter-spacing:.03em;margin-top:4px}
+@media(max-width:760px){
+  .an-range{width:100%}
+  .an-range-btn{flex:1;padding:12px 6px;font-size:10.5px;letter-spacing:.08em}
+  #analyticsRangeLabel{margin-left:0}
+  .an-cols{height:120px}
+}
 </style>
 </head>
 <body>
@@ -691,6 +722,10 @@ button,input,select,textarea{font:inherit}
       <div class="nav-item" data-panel="history">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Guest History
+      </div>
+      <div class="nav-item" data-panel="analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
       </div>
       <div class="nav-item" data-panel="trash">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -882,6 +917,24 @@ button,input,select,textarea{font:inherit}
         <div id="historyResults" style="padding:16px 40px 40px;"></div>
       </div>
 
+      <!-- ANALYTICS -->
+      <div class="panel" id="panel-analytics">
+        <div class="toolbar an-toolbar">
+          <div class="an-range" id="analyticsRange">
+            <button class="an-range-btn" data-days="7" type="button">7 days</button>
+            <button class="an-range-btn" data-days="30" type="button">30 days</button>
+            <button class="an-range-btn" data-days="90" type="button">90 days</button>
+            <button class="an-range-btn" data-days="365" type="button">12 months</button>
+          </div>
+          <span class="result-count" id="analyticsRangeLabel"></span>
+          <button class="tb-btn" id="analyticsRefresh" type="button">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div id="analyticsContent" style="margin-top:22px"></div>
+      </div>
+
       <!-- TRASH -->
       <div class="panel" id="panel-trash">
         <div class="toolbar" style="display:flex;flex-direction:column;gap:8px;">
@@ -909,7 +962,7 @@ button,input,select,textarea{font:inherit}
         <div class="section-title">Account Credentials</div>
         <div class="settings-card">
           <div class="settings-title">Change Master Username &amp; Password</div>
-          <p style="font-size:12px;color:var(--sage);margin-bottom:16px;line-height:1.7;letter-spacing:.04em;">This updates the <strong>niseko</strong> master account credentials stored in localStorage. Hotel accounts (ritz, moxy) are managed in the source code.</p>
+          <p style="font-size:12px;color:var(--sage);margin-bottom:16px;line-height:1.7;letter-spacing:.04em;">Passwords are managed in Railway → Variables: <strong>PASS_SUPERADMIN</strong>, <strong>PASS_STAFF</strong>, <strong>PASS_MOXY</strong>, <strong>PASS_RITZ</strong>. Redeploy after changing them.</p>
           <div class="edit-grid">
             <div class="field"><label>New Username</label><input type="text" id="newUser" placeholder="admin" autocomplete="off"></div>
             <div class="field"><label>New Password</label><input type="password" id="newPass" placeholder="min 6 chars" autocomplete="new-password"></div>
@@ -1232,7 +1285,7 @@ async function tryLogin() {
     const _now = new Date(Date.now() + 9*60*60*1000);
     const _todayForFilter = `${_now.getUTCFullYear()}-${String(_now.getUTCMonth()+1).padStart(2,'0')}-${String(_now.getUTCDate()).padStart(2,'0')}`;
     populateBusMultiselect(_todayForFilter);
-    renderDashboard();
+    switchPanel('dashboard');
     updateTopbarMeta();
     updateCancelBadge();
     updateTrashBadge();
@@ -1248,7 +1301,7 @@ async function tryLogin() {
 
 /* Apply UI restrictions based on role */
 function applyRoleUI() {
-  const isMaster = currentUser && currentUser.role === 'master';
+  const isMaster = !(currentUser && currentUser.hotelFilter); /* superadmin + staff see every hotel */
 
   /* Hotel filter: lock to own hotel for hotel roles */
   const hotelWrap = document.getElementById('filterHotelWrap');
@@ -1273,13 +1326,18 @@ function applyRoleUI() {
     syncHotelCheckedState();
   }
 
-  /* Hide Trash and Settings panels from hotel roles */
-  document.querySelectorAll('.nav-item[data-panel="trash"], .nav-item[data-panel="settings"]').forEach(el => {
-    el.style.display = isMaster ? '' : 'none';
+  /* Analytics + Settings: superadmin only · Trash: every role (server scopes it by hotel) */
+  const isSuper = currentUser && currentUser.role === 'superadmin';
+  document.querySelectorAll('.nav-item[data-panel="analytics"], .nav-item[data-panel="settings"]').forEach(el => {
+    el.style.display = isSuper ? '' : 'none';
   });
+  document.querySelectorAll('.nav-item[data-panel="trash"]').forEach(el => { el.style.display = ''; });
 }
 
 function logout() {
+  stopPolling();
+  _token = null;
+  _res = []; _cancel = []; _trash = [];
   currentUser = null;
   document.getElementById('adminShell').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
@@ -1306,7 +1364,7 @@ function updateCancelBadge() {
 }
 
 /* ════ PANELS ════ */
-const TITLES = { dashboard:'Dashboard', reservations:'Reservations', cancellations:'Cancellations', trash:'Trash', history:'Guest History', settings:'Settings' };
+const TITLES = { dashboard:'Dashboard', reservations:'Reservations', cancellations:'Cancellations', trash:'Trash', history:'Guest History', analytics:'Analytics', settings:'Settings' };
 function switchPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1318,6 +1376,7 @@ function switchPanel(id) {
   if (id === 'cancellations') renderCancelTable();
   if (id === 'trash')         renderTrashTable();
   if (id === 'history')       renderHistoryPanel();
+  if (id === 'analytics')     renderAnalytics();
 }
 
 /* ════ STATUS ════ */
@@ -1620,6 +1679,7 @@ function openEditModal(id, fromDetail = false) {
   fillBusSelect(document.getElementById('e_bus'), r.dir||'arrival', r.bus);
   document.getElementById('e_date').value = r.date||'';
   document.getElementById('e_hotel').value = r.hotel||'Hilton Niseko Village';
+  document.getElementById('e_hotel').disabled = !!(currentUser && currentUser.hotelFilter);
   document.getElementById('e_flight').value = r.flight||'';
   document.getElementById('e_flighttype').value = r.flightType||'';
   document.getElementById('e_status').value = r.status||'pending';
@@ -1950,7 +2010,7 @@ function closeCancelDetail() {
 
 document.getElementById('cancelDetailMarkBtn').addEventListener('click', () => {
   if (!viewingCancelId) return;
-  const r = loadCancel().find(x => x.createdAt === viewingCancelId);
+  const r = loadCancel().find(x => x.id === viewingCancelId);
   closeCancelDetail();
   if (r) setTimeout(() => openCancelStatusAction(r), 50);
 });
@@ -2102,15 +2162,14 @@ function renderHistoryPanel(query) {
       const tsHtml = `<div class="history-entry-ts">${tsLabel[src]}: ${fmtTs(tsRaw)}</div>`;
 
       /* Action buttons */
-      const isMaster = currentUser && currentUser.role === 'master';
       let actionBtn = '';
       if (src === 'reservation') {
         actionBtn = `<button class="history-action-btn" onclick="openResDetail('${r.id}')">View details</button>
                      <button class="history-action-btn ghost" onclick="switchPanel('reservations');setTimeout(()=>{document.getElementById('searchInput').value='${(r.email||'').replace(/'/g,"\'")}';syncClear('searchInput','searchClear');renderResTable();},80)">Go to record</button>`;
       } else if (src === 'cancellation') {
-        actionBtn = `<button class="history-action-btn" onclick="openCancelDetail('${r.createdAt}')">View details</button>
+        actionBtn = `<button class="history-action-btn" onclick="openCancelDetail('${r.id}')">View details</button>
                      <button class="history-action-btn ghost" onclick="switchPanel('cancellations');setTimeout(()=>{document.getElementById('cancelSearchInput').value='${(r.email||r.ref||'').replace(/'/g,"\'")}';syncClear('cancelSearchInput','cancelSearchClear');renderCancelTable();},80)">Go to record</button>`;
-      } else if (src === 'deleted' && isMaster) {
+      } else if (src === 'deleted') {
         actionBtn = `<button class="history-action-btn ghost" onclick="switchPanel('trash');setTimeout(()=>{document.getElementById('trashSearchInput').value='${(r.email||'').replace(/'/g,"\'")}';syncClear('trashSearchInput','trashSearchClear');renderTrashTable();},80)">Go to trash</button>`;
       }
 
@@ -2906,7 +2965,7 @@ function renderTrashTable() {
     <tbody>${list.map(r => {
       const b = busById(r.bus);
       const isCancel = r._trashType === 'cancellation';
-      const trashKey = isCancel ? (r.createdAt||r.id) : r.id;
+      const trashKey = r.id;
       const typeBadge = isCancel
         ? `<span style="font-size:10px;background:rgba(220,53,69,.12);color:var(--red);padding:2px 8px;border-radius:3px;letter-spacing:.06em;text-transform:uppercase">Cancel req</span>`
         : `<span style="font-size:10px;background:rgba(26,63,168,.10);color:var(--moss);padding:2px 8px;border-radius:3px;letter-spacing:.06em;text-transform:uppercase">Reservation</span>`;
@@ -2961,6 +3020,98 @@ document.getElementById('emptyTrashBtn').addEventListener('click', async () => {
     try { await api('DELETE','/api/trash'); _trash=[]; renderTrashTable(); updateTrashBadge(); toast('Trash emptied','err'); } catch(e){toast(e.message,'err');}
   }
 });
+
+/* ════ ANALYTICS ════ */
+let _anDays = 30;
+const AN_LABELS = { en:'English', ja:'日本語 · Japanese', ko:'한국어 · Korean', zh:'中文 · Chinese', mobile:'Mobile', tablet:'Tablet', desktop:'Desktop', unknown:'Unknown' };
+const anEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+function anBarList(items, opts = {}) {
+  if (!items || !items.length) return '<p class="an-empty">No data yet</p>';
+  const total = items.reduce((a, r) => a + r.n, 0) || 1;
+  const max   = Math.max(1, ...items.map(r => r.n));
+  return items.map(r => {
+    const label = opts.label ? opts.label(r.key) : (AN_LABELS[r.key] || r.key);
+    const extra = opts.extra ? opts.extra(r) : '';
+    return `<div class="an-bar-row">
+      <div class="an-bar-top"><span class="an-bar-label">${anEsc(label)}</span><span class="an-bar-val">${r.n}<span class="an-bar-pct">${Math.round(r.n / total * 100)}%</span>${extra}</span></div>
+      <div class="bus-bar-wrap"><div class="bus-bar" style="width:${Math.round(r.n / max * 100)}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function anColumns(daily, key, cls) {
+  const max  = Math.max(1, ...daily.map(d => d[key]));
+  const narrow = window.innerWidth <= 760;
+  const step = daily.length > 120 ? 30 : daily.length > 45 ? (narrow ? 30 : 14) : daily.length > 14 ? (narrow ? 10 : 5) : 1;
+  return `<div class="an-cols">${daily.map((d, i) => {
+    const h   = d[key] ? Math.max(3, Math.round(d[key] / max * 100)) : 0;
+    const lbl = i % step === 0 ? d.day.slice(5).replace('-', '/') : '';
+    return `<div class="an-col" title="${d.day} · ${d[key]}"><div class="an-col-bar ${cls}" style="height:${h}%"></div><span class="an-col-lbl">${lbl}</span></div>`;
+  }).join('')}</div><div class="an-cols-max">Peak: ${max} / day</div>`;
+}
+
+function anFunnel(T) {
+  const steps = [
+    { label:'Visited the site',          n:T.visits },
+    { label:'Clicked "Book this bus"',   n:T.bookClicks },
+    { label:'Started the booking form',  n:T.formStarts },
+    { label:'Submitted a booking',       n:T.guestBookings },
+  ];
+  const base = T.visits || 0;
+  return steps.map(s => {
+    const p = base ? Math.min(100, Math.round(s.n / base * 100)) : 0;
+    return `<div class="an-bar-row">
+      <div class="an-bar-top"><span class="an-bar-label">${s.label}</span><span class="an-bar-val">${s.n}<span class="an-bar-pct">${base ? p + '%' : '—'}</span></span></div>
+      <div class="bus-bar-wrap"><div class="bus-bar" style="width:${p}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+async function renderAnalytics() {
+  const requested = _anDays;
+  document.querySelectorAll('#analyticsRange .an-range-btn').forEach(b => b.classList.toggle('active', +b.dataset.days === requested));
+  const wrap = document.getElementById('analyticsContent');
+  if (!wrap.innerHTML.trim()) wrap.innerHTML = '<p class="an-empty" style="text-align:center;padding:40px 0">Loading…</p>';
+  let d;
+  try { d = await api('GET', `/api/analytics?days=${requested}`); }
+  catch (e) { wrap.innerHTML = `<div class="empty-state"><p>Could not load analytics · ${anEsc(e.message)}</p></div>`; return; }
+  if (requested !== _anDays) return; /* a newer range was selected meanwhile */
+  const T = d.totals;
+  const conv = T.visits ? (Math.round(T.guestBookings / T.visits * 1000) / 10) + '%' : '—';
+  document.getElementById('analyticsRangeLabel').textContent = `${d.from} → ${d.to} · JST`;
+  wrap.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card blue"><div class="stat-label">Visits</div><div class="stat-value">${T.visits}</div><div class="stat-sub">Browser sessions</div></div>
+      <div class="stat-card green"><div class="stat-label">Bookings</div><div class="stat-value">${T.bookings}</div><div class="stat-sub">${T.guestBookings} online · ${T.staffBookings} by staff · ${T.pax} pax</div></div>
+      <div class="stat-card gold"><div class="stat-label">Conversion</div><div class="stat-value">${conv}</div><div class="stat-sub">Visits → online booking</div></div>
+      <div class="stat-card red"><div class="stat-label">Cancellations</div><div class="stat-value">${T.cancelRequests}</div><div class="stat-sub">Requests · ${T.cancelled} bookings cancelled</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-title">Visits per day</div>${anColumns(d.daily, 'visits', 'visits')}</div>
+      <div class="dash-card"><div class="dash-card-title">Bookings per day</div>${anColumns(d.daily, 'bookings', 'bookings')}</div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-title">Booking funnel</div>${anFunnel(T)}</div>
+      <div class="dash-card">
+        <div class="dash-card-title">Language</div>${anBarList(d.langs)}
+        <div class="dash-card-title" style="margin-top:26px">Device</div>${anBarList(d.devices)}
+      </div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-title">Bookings by hotel</div>${anBarList(d.hotels, { label:k => k, extra:r => `<span class="an-bar-pct">${r.pax} pax</span>` })}</div>
+      <div class="dash-card"><div class="dash-card-title">Bookings by bus</div>${anBarList(d.buses, { label:k => busDisplay(k), extra:r => `<span class="an-bar-pct">${r.pax} pax</span>` })}</div>
+    </div>
+    <p class="an-note">Visits are counted once per browser session (no cookies, no personal data). Bookings are counted by the date they were made, not the travel date, and exclude the Trash.</p>`;
+}
+
+document.getElementById('analyticsRange').addEventListener('click', e => {
+  const b = e.target.closest('.an-range-btn');
+  if (!b) return;
+  _anDays = +b.dataset.days;
+  renderAnalytics();
+});
+document.getElementById('analyticsRefresh').addEventListener('click', () => renderAnalytics());
 
 /* ════ AUTO-POLLING — refresh every 30 s while logged in ════ */
 let _pollInterval = null;
