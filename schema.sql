@@ -92,3 +92,15 @@ CREATE INDEX IF NOT EXISTS idx_cancel_status  ON cancellations (status);
 CREATE INDEX IF NOT EXISTS idx_cancel_hotel   ON cancellations (hotel);
 CREATE INDEX IF NOT EXISTS idx_cancel_email   ON cancellations (email);
 CREATE INDEX IF NOT EXISTS idx_cancel_trashed ON cancellations (trashed_at);
+
+-- ── ANALYTICS ────────────────────────────────────────────
+-- (server.js also creates this automatically on startup)
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id         SERIAL      PRIMARY KEY,
+  event      TEXT        NOT NULL,          -- visit | book_click | form_start
+  lang       TEXT,                          -- en | ja | ko | zh
+  device     TEXT,                          -- mobile | tablet | desktop
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS analytics_events_created_idx ON analytics_events (created_at);
