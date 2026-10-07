@@ -1142,6 +1142,7 @@ async function api(method, path, body) {
   };
   if (body !== undefined) opts.body = JSON.stringify(body);
   const resp = await fetch(`${API_BASE}${path}`, opts);
+  if (resp.status === 401 && path !== '/api/auth' && typeof expireSession === 'function') expireSession();
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: resp.statusText }));
     throw new Error(err.error || resp.statusText);
@@ -1273,30 +1274,42 @@ async function tryLogin() {
   const p = document.getElementById('loginPass').value;
   const loginBtn = document.getElementById('loginBtn');
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Signing in…'; }
+  let authed = false;
   try {
     const data = await api('POST', '/api/auth', { username: u, password: p });
+    authed = true;
     _token = data.token;
+    _tokenIssuedAt = Date.now();
+    _lastActivity = Date.now();
     currentUser = { username: u, role: data.role, label: data.label, hotelFilter: data.hotelFilter };
     await refreshAll();
+    saveSession();
     startPolling();
-    applyRoleUI();
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminShell').style.display = 'block';
-    const _now = new Date(Date.now() + 9*60*60*1000);
-    const _todayForFilter = `${_now.getUTCFullYear()}-${String(_now.getUTCMonth()+1).padStart(2,'0')}-${String(_now.getUTCDate()).padStart(2,'0')}`;
-    populateBusMultiselect(_todayForFilter);
-    switchPanel('dashboard');
-    updateTopbarMeta();
-    updateCancelBadge();
-    updateTrashBadge();
+    showAdmin();
   } catch {
+    if (authed) { clearSession(); _token = null; currentUser = null; }
     const err = document.getElementById('loginError');
+    err.textContent = authed ? 'Could not load data — please try again.' : 'Incorrect username or password.';
     err.style.display = 'block';
     err.style.animation = 'none'; void err.offsetWidth; err.style.animation = 'shakeIn .3s ease';
     document.getElementById('loginPass').value = '';
   } finally {
-    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign In'; }
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Sign In →'; }
   }
+}
+
+/* Show the admin shell for the signed-in user (after login or after a page refresh) */
+function showAdmin() {
+  applyRoleUI();
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminShell').style.display = 'block';
+  const _now = new Date(Date.now() + 9*60*60*1000);
+  const _todayForFilter = `${_now.getUTCFullYear()}-${String(_now.getUTCMonth()+1).padStart(2,'0')}-${String(_now.getUTCDate()).padStart(2,'0')}`;
+  populateBusMultiselect(_todayForFilter);
+  switchPanel('dashboard');
+  updateTopbarMeta();
+  updateCancelBadge();
+  updateTrashBadge();
 }
 
 /* Apply UI restrictions based on role */
@@ -1335,6 +1348,7 @@ function applyRoleUI() {
 }
 
 function logout() {
+  if (typeof clearSession === 'function') clearSession();
   stopPolling();
   _token = null;
   _res = []; _cancel = []; _trash = [];
@@ -3166,6 +3180,85 @@ function startPolling() {
 function stopPolling() {
   if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
 }
+
+/* ════ SESSION — survives refresh, ends after 30 min without activity ════ */
+const SESSION_KEY     = 'nvbus_session';
+const IDLE_MS         = 30 * 60 * 1000;   /* 30 min without activity → login screen */
+const RENEW_AFTER_MS  = 5 * 60 * 1000;    /* renew the token at most every 5 min while active */
+let _tokenIssuedAt = 0;
+let _lastActivity  = 0;
+let _lastSaved     = 0;
+let _renewing      = false;
+
+function saveSession() {
+  if (!_token || !currentUser) return;
+  _lastSaved = Date.now();
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      token: _token, issuedAt: _tokenIssuedAt, lastActivity: _lastActivity, user: currentUser,
+    }));
+  } catch {}
+}
+function clearSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch {} }
+
+function expireSession(msg) {
+  if (!currentUser) return;
+  clearSession();
+  logout();
+  const err = document.getElementById('loginError');
+  err.textContent = msg || 'Session expired — please sign in again.';
+  err.style.display = 'block';
+}
+
+function isIdle() { return currentUser && Date.now() - _lastActivity > IDLE_MS; }
+
+async function maybeRenewToken() {
+  if (!_token || _renewing || Date.now() - _tokenIssuedAt < RENEW_AFTER_MS) return;
+  _renewing = true;
+  try {
+    const d = await api('POST', '/api/auth/refresh');
+    _token = d.token;
+    _tokenIssuedAt = Date.now();
+    saveSession();
+  } catch {} finally { _renewing = false; }
+}
+
+function onUserActivity() {
+  if (!currentUser) return;
+  if (isIdle()) { expireSession(); return; }   /* came back after > 30 min */
+  _lastActivity = Date.now();
+  if (Date.now() - _lastSaved > 15000) saveSession();
+  maybeRenewToken();
+}
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, onUserActivity, { passive: true, capture: true }));
+
+setInterval(() => { if (isIdle()) expireSession(); }, 30000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isIdle()) expireSession();
+});
+
+/* Restore the session after a page refresh */
+(async function restoreSession() {
+  let s = null;
+  try { s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch {}
+  if (!s || !s.token || !s.user) return;
+  if (Date.now() - (s.lastActivity || 0) > IDLE_MS) { clearSession(); return; }
+  _token = s.token;
+  _tokenIssuedAt = s.issuedAt || 0;
+  _lastActivity = Date.now();
+  currentUser = s.user;
+  try {
+    await refreshAll();
+  } catch {
+    if (currentUser) expireSession();   /* token expired or server unreachable */
+    return;
+  }
+  saveSession();
+  startPolling();
+  showAdmin();
+  maybeRenewToken();
+})();
 </script>
 </body>
 </html>
