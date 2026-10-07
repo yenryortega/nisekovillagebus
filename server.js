@@ -25,7 +25,7 @@ for (const v of ['PASS_SUPERADMIN', 'PASS_STAFF', 'PASS_MOXY', 'PASS_RITZ']) {
 //   hotel      → only its own hotel (reservations, cancellations, history, trash)
 const USERS = {
   superadmin: { pass: process.env.PASS_SUPERADMIN, role: 'superadmin', label: 'Super Admin',      hotelFilter: null },
-  nvstaff:    { pass: process.env.PASS_STAFF,      role: 'staff',      label: 'NV Staff',         hotelFilter: null },
+  hnvstaff:    { pass: process.env.PASS_STAFF,      role: 'staff',      label: 'HNV Staff',         hotelFilter: null },
   nvmoxy:     { pass: process.env.PASS_MOXY,       role: 'hotel',      label: 'Moxy',             hotelFilter: 'Moxy' },
   nvritz:     { pass: process.env.PASS_RITZ,       role: 'hotel',      label: 'The Ritz-Carlton', hotelFilter: 'Ritz-Carlton Reserve' },
 };
